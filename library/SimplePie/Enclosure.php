@@ -852,8 +852,6 @@ class SimplePie_Enclosure
 	}
 
 	/**
-	 * Embed the enclosure using Javascript
-	 *
 	 * `$options` is an array or comma-separated key:value string, with the
 	 * following properties:
 	 *
@@ -892,30 +890,32 @@ class SimplePie_Enclosure
 	 * `width` and `height` set to `auto` will default to 480x270 video resolution.
 	 *
 	 * @todo If the dimensions for media:content are defined, use them when width/height are set to 'auto'.
-	 * @param array|string $options Comma-separated key:value list, or array
-	 * @param bool $native Use `<embed>`
-	 * @return string HTML string to output
+	 *
+	 * @param string|array $options Comma-separated key:value list, or array
+	 * @return array
 	 */
-	public function embed($options = '', $native = false)
+	public function process_embed_options($options = '')
 	{
-		// Set up defaults
-		$audio = '';
-		$video = '';
-		$alt = '';
-		$altclass = '';
-		$loop = 'false';
-		$width = 'auto';
-		$height = 'auto';
-		$bgcolor = '#ffffff';
-		$mediaplayer = '';
-		$widescreen = false;
-		$handler = $this->get_handler();
-		$type = $this->get_real_type();
+		$defaults = [
+			'audio'    => '',
+			'video'    => '',
+			'alt'      => '',
+			'altclass' => '',
+			'loop'     => 'false',
+			'width'    => 'auto',
+			'height'   => 'auto',
+			'bgcolor'  => '#ffffff',
+			'mediaplayer' => '',
+			'widescreen'  => false,
+			'handler'     => $this->get_handler(),
+			'type'        => $this->get_real_type(),
+			'mime'        => '',
+		];
 
 		// Process options and reassign values as necessary
 		if (is_array($options))
 		{
-			extract($options);
+			$defaults = array_merge($defaults, $options);
 		}
 		else
 		{
@@ -930,123 +930,129 @@ class SimplePie_Enclosure
 					switch ($opt[0])
 					{
 						case 'audio':
-							$audio = $opt[1];
+							$defaults['audio'] = $opt[1];
 							break;
 
 						case 'video':
-							$video = $opt[1];
+							$defaults['video'] = $opt[1];
 							break;
 
 						case 'alt':
-							$alt = $opt[1];
+							$defaults['alt'] = $opt[1];
 							break;
 
 						case 'altclass':
-							$altclass = $opt[1];
+							$defaults['altclass'] = $opt[1];
 							break;
 
 						case 'loop':
-							$loop = $opt[1];
+							$defaults['loop'] = $opt[1];
 							break;
 
 						case 'width':
-							$width = $opt[1];
+							$defaults['width'] = $opt[1];
 							break;
 
 						case 'height':
-							$height = $opt[1];
+							$defaults['height'] = $opt[1];
 							break;
 
 						case 'bgcolor':
-							$bgcolor = $opt[1];
+							$defaults['bgcolor'] = $opt[1];
 							break;
 
 						case 'mediaplayer':
-							$mediaplayer = $opt[1];
+							$defaults['mediaplayer'] = $opt[1];
 							break;
 
 						case 'widescreen':
-							$widescreen = $opt[1];
+							$defaults['widescreen'] = $opt[1];
 							break;
 					}
 				}
 			}
 		}
 
-		$mime = explode('/', $type, 2);
-		$mime = $mime[0];
+		//
+		$mime = explode('/', $defaults['type'], 2);
+		$defaults['mime'] = $mime[0];
 
 		// Process values for 'auto'
-		if ($width === 'auto')
+		if ($defaults['width'] === 'auto')
 		{
-			if ($mime === 'video')
+			$defaults['width'] = '100%';
+			if ($defaults['mime'] === 'video')
 			{
-				if ($height === 'auto')
+				if ($defaults['height'] === 'auto')
 				{
-					$width = 480;
+					$defaults['width'] = 480;
 				}
-				elseif ($widescreen)
+				elseif ($defaults['widescreen'])
 				{
-					$width = round((intval($height)/9)*16);
+					$defaults['width'] = round((intval($defaults['height']) / 9) * 16);
 				}
 				else
 				{
-					$width = round((intval($height)/3)*4);
+					$defaults['width'] = round((intval($defaults['height']) / 3) * 4);
 				}
-			}
-			else
-			{
-				$width = '100%';
 			}
 		}
 
-		if ($height === 'auto')
+		if ($defaults['height'] === 'auto')
 		{
-			if ($mime === 'audio')
+			if ($defaults['mime'] === 'audio')
 			{
-				$height = 0;
+				$defaults['height'] = 0;
 			}
-			elseif ($mime === 'video')
+			elseif ($defaults['mime'] === 'video')
 			{
-				if ($width === 'auto')
+				if ($defaults['width'] === 'auto')
 				{
-					if ($widescreen)
-					{
-						$height = 270;
-					}
-					else
-					{
-						$height = 360;
-					}
+					$defaults['height'] = $defaults['widescreen'] ? 270 : 360;
 				}
-				elseif ($widescreen)
+				elseif ($defaults['widescreen'])
 				{
-					$height = round((intval($width)/16)*9);
+					$defaults['height'] = round((intval($defaults['width']) / 16) * 9);
 				}
 				else
 				{
-					$height = round((intval($width)/4)*3);
+					$defaults['height'] = round((intval($defaults['width']) / 4) * 3);
 				}
 			}
 			else
 			{
-				$height = 376;
+				$defaults['height'] = 376;
 			}
 		}
-		elseif ($mime === 'audio')
+		elseif ($defaults['mime'] === 'audio')
 		{
-			$height = 0;
+			$defaults['height'] = 0;
 		}
 
 		// Set proper placeholder value
-		if ($mime === 'audio')
+		if ($defaults['mime'] === 'audio')
 		{
-			$placeholder = $audio;
+			$defaults['placeholder'] = $defaults['audio'];
 		}
-		elseif ($mime === 'video')
+		elseif ($defaults['mime'] === 'video')
 		{
-			$placeholder = $video;
+			$defaults['placeholder'] = $defaults['video'];
 		}
+
+		return $defaults;
+	}
+
+	/**
+	 * Embed the enclosure using HTML audio/video/picture elements or Javascript
+	 *
+	 * @param array|string $options Comma-separated key:value list, or array {@see process_embed_options}
+	 * @param bool $native Use `<embed>`
+	 * @return string HTML string to output
+	 */
+	public function embed($options = '', $native = false)
+	{
+		$options = $this->process_embed_options($options);
+		extract($options);
 
 		$embed = '';
 
