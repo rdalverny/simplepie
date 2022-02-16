@@ -500,7 +500,7 @@ class SimplePie_Enclosure
 	/**
 	 * Get the preferred handler
 	 *
-	 * @return string|null One of 'flash', 'fmedia', 'quicktime', 'wmedia', 'mp3'
+	 * @return string|null One of 'quicktime', 'wmedia', 'html'
 	 */
 	public function get_handler()
 	{
@@ -871,10 +871,6 @@ class SimplePie_Enclosure
 	 *    and it is recommended that you use this default.
 	 * - `loop` (boolean): Do you want the media to loop when it's done?
 	 *    Defaults to `false`.
-	 * - `mediaplayer` (string): The location of the included
-	 *    `mediaplayer.swf` file. This allows for the playback of Flash Video
-	 *    (`.flv`) files, and is the default handler for non-Odeo MP3's.
-	 *    Defaults to blank.
 	 * - `video` (string): This is an image that should be used as a
 	 *    placeholder for video files before they're loaded (QuickTime-only).
 	 *    Can be any relative or absolute URL. Defaults to blank.
@@ -905,7 +901,6 @@ class SimplePie_Enclosure
 			'width'    => 'auto',
 			'height'   => 'auto',
 			'bgcolor'  => '#ffffff',
-			'mediaplayer' => '',
 			'widescreen'  => false,
 			'handler'     => $this->get_handler(),
 			'type'        => $this->get_real_type(),
@@ -959,10 +954,6 @@ class SimplePie_Enclosure
 
 						case 'bgcolor':
 							$defaults['bgcolor'] = $opt[1];
-							break;
-
-						case 'mediaplayer':
-							$defaults['mediaplayer'] = $opt[1];
 							break;
 
 						case 'widescreen':
@@ -1070,37 +1061,8 @@ class SimplePie_Enclosure
 
 		$embed = '';
 
-		// Flash
-		if ($handler === 'flash')
-		{
-			if ($native)
-			{
-				$embed .= "<embed src=\"" . $this->get_link() . "\" pluginspage=\"http://adobe.com/go/getflashplayer\" type=\"$type\" quality=\"high\" width=\"$width\" height=\"$height\" bgcolor=\"$bgcolor\" loop=\"$loop\"></embed>";
-			}
-			else
-			{
-				$embed .= "<script type='text/javascript'>embed_flash('$bgcolor', '$width', '$height', '" . $this->get_link() . "', '$loop', '$type');</script>";
-			}
-		}
-
-		// Flash Media Player file types.
-		// Preferred handler for MP3 file types.
-		elseif ($handler === 'fmedia')
-		{
-			$height += 20;
-			if ($native)
-			{
-				$embed .= "<embed src=\"$mediaplayer\" pluginspage=\"http://adobe.com/go/getflashplayer\" type=\"application/x-shockwave-flash\" quality=\"high\" width=\"$width\" height=\"$height\" wmode=\"transparent\" flashvars=\"file=" . rawurlencode($this->get_link().'?file_extension=.'.$this->get_extension()) . "&autostart=false&repeat=$loop&showdigits=true&showfsbutton=false\"></embed>";
-			}
-			else
-			{
-				$embed .= "<script type='text/javascript'>embed_flv('$width', '$height', '" . rawurlencode($this->get_link().'?file_extension=.'.$this->get_extension()) . "', '$placeholder', '$loop', '$mediaplayer');</script>";
-			}
-		}
-
 		// QuickTime 7 file types.  Need to test with QuickTime 6.
-		// Only handle MP3's if the Flash Media Player is not present.
-		elseif ($handler === 'quicktime')
+		if ($handler === 'quicktime')
 		{
 			$height += 16;
 			if ($native)
@@ -1139,12 +1101,6 @@ class SimplePie_Enclosure
 
 		return $embed;
 	}
-
-	// Flash
-	const TYPES_FLASH = array('application/x-shockwave-flash', 'application/futuresplash');
-
-	// Flash Media Player
-	const TYPES_FMEDIA  = array('video/flv', 'video/x-flv','flv-application/octet-stream');
 
 	// QuickTime
 	const TYPES_QUICKTIME = array(
@@ -1193,16 +1149,12 @@ class SimplePie_Enclosure
 	//
 	const MEDIA_HANDLERS = array(
 		'html'      => self::TYPES_HTML,
-		'flash'     => self::TYPES_FLASH,
-		'fmedia'    => self::TYPES_FMEDIA,
 		'quicktime' => self::TYPES_QUICKTIME,
 		'wmedia'    => self::TYPES_WMEDIA,
 	);
 
 	//
 	const EXTENSIONS_TYPES = array(
-		'application/futuresplash'      => array('spl'),
-		'application/x-shockwave-flash' => array('swf'),
 		'audio/acc'       => array('aac', 'adts'),
 		'audio/aiff'      => array('aif', 'aifc', 'aiff', 'cdda'),
 		'audio/midi'      => array('kar', 'mid', 'midi', 'smf'),
@@ -1219,7 +1171,6 @@ class SimplePie_Enclosure
 		'video/ogg'       => array('.ogg', '.ogv'),
 		'video/quicktime' => array('mov', 'qt'),
 		'video/sd-video'  => array('sdv'),
-		'video/x-flv'     => array('flv'),
 		'video/x-m4v'     => array('m4v'),
 		'video/x-ms-asf'  => array('asf'),
 		'video/x-ms-wm'   => array('wm'),
