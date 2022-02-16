@@ -1126,6 +1126,84 @@ class SimplePie_Enclosure
 		return $embed;
 	}
 
+	// Flash
+	const TYPES_FLASH = array('application/x-shockwave-flash', 'application/futuresplash');
+
+	// Flash Media Player
+	const TYPES_FMEDIA  = array('video/flv', 'video/x-flv','flv-application/octet-stream');
+
+	// QuickTime
+	const TYPES_QUICKTIME = array(
+		'audio/3gpp', 'audio/3gpp2',
+		'audio/aac', 'audio/x-aac',
+		'audio/aiff', 'audio/x-aiff',
+		'audio/mid', 'audio/midi', 'audio/x-midi',
+		'audio/mp4', 'audio/m4a',
+		'audio/m4a', 'audio/x-m4a',
+		'audio/wav', 'audio/x-wav',
+		'video/3gpp', 'video/3gpp2',
+		'video/m4v', 'video/x-m4v',
+		'video/mp4', 'video/mpeg', 'video/x-mpeg',
+		'video/quicktime',
+		'video/sd-video',
+	);
+
+	// Windows Media
+	const TYPES_WMEDIA = array(
+		'application/asx',
+		'application/x-mplayer2',
+		'audio/x-ms-wma',
+		'audio/x-ms-wax',
+		'video/x-ms-asf-plugin',
+		'video/x-ms-asf',
+		'video/x-ms-wm',
+		'video/x-ms-wmv',
+		'video/x-ms-wvx',
+	);
+
+	// MP3
+	const TYPES_MP3 = array(
+		'audio/mp3', 'audio/x-mp3',
+		'audio/mpeg', 'audio/x-mpeg'
+	);
+
+	//
+	const MEDIA_HANDLERS = array(
+		'flash'     => self::TYPES_FLASH,
+		'fmedia'    => self::TYPES_FMEDIA,
+		'quicktime' => self::TYPES_QUICKTIME,
+		'wmedia'    => self::TYPES_WMEDIA,
+		'mp3'       => self::TYPES_MP3,
+	);
+
+	//
+	const EXTENSIONS_TYPES = array(
+		'application/futuresplash'      => array('spl'),
+		'application/x-shockwave-flash' => array('swf'),
+		'audio/acc'       => array('aac', 'adts'),
+		'audio/aiff'      => array('aif', 'aifc', 'aiff', 'cdda'),
+		'audio/midi'      => array('kar', 'mid', 'midi', 'smf'),
+		'audio/mp3'       => array('mp3', 'swa'),
+		'audio/ms-wax'    => array('wax'),
+		'audio/ms-wma'    => array('wma'),
+		'audio/wav'       => array('bwf', 'wav'),
+		'audio/x-m4a'     => array('m4a'),
+		'video/3gpp'      => array('3gp', '3gpp'),
+		'video/3gpp2'     => array('3g2', '3gp2'),
+		'video/mp4'       => array('mp4', 'mpg4'),
+		'video/quicktime' => array('mov', 'qt'),
+		'video/sd-video'  => array('sdv'),
+		'video/x-flv'     => array('flv'),
+		'video/x-m4v'     => array('m4v'),
+		'video/x-ms-asf'  => array('asf'),
+		'video/x-ms-wm'   => array('wm'),
+		'video/x-ms-wmv'  => array('wmv'),
+		'video/x-ms-wvx'  => array('wvx'),
+		'videop/mpeg'     => array('m1s', 'm1v', 'm15', 'm75',
+								   'mp2', 'mpa', 'mpeg', 'mpg',
+								   'mpm', 'mpv'),
+	);
+
 	/**
 	 * Get the real media type
 	 *
@@ -1139,175 +1217,61 @@ class SimplePie_Enclosure
 	 */
 	public function get_real_type($find_handler = false)
 	{
-		// Mime-types by handler.
-		$types_flash = array('application/x-shockwave-flash', 'application/futuresplash'); // Flash
-		$types_fmedia = array('video/flv', 'video/x-flv','flv-application/octet-stream'); // Flash Media Player
-		$types_quicktime = array('audio/3gpp', 'audio/3gpp2', 'audio/aac', 'audio/x-aac', 'audio/aiff', 'audio/x-aiff', 'audio/mid', 'audio/midi', 'audio/x-midi', 'audio/mp4', 'audio/m4a', 'audio/x-m4a', 'audio/wav', 'audio/x-wav', 'video/3gpp', 'video/3gpp2', 'video/m4v', 'video/x-m4v', 'video/mp4', 'video/mpeg', 'video/x-mpeg', 'video/quicktime', 'video/sd-video'); // QuickTime
-		$types_wmedia = array('application/asx', 'application/x-mplayer2', 'audio/x-ms-wma', 'audio/x-ms-wax', 'video/x-ms-asf-plugin', 'video/x-ms-asf', 'video/x-ms-wm', 'video/x-ms-wmv', 'video/x-ms-wvx'); // Windows Media
-		$types_mp3 = array('audio/mp3', 'audio/x-mp3', 'audio/mpeg', 'audio/x-mpeg'); // MP3
-
+		$type = null;
 		if ($this->get_type() !== null)
 		{
 			$type = strtolower($this->type);
 		}
-		else
-		{
-			$type = null;
-		}
 
 		// If we encounter an unsupported mime-type, check the file extension and guess intelligently.
-		if (!in_array($type, array_merge($types_flash, $types_fmedia, $types_quicktime, $types_wmedia, $types_mp3)))
+		if (!in_array($type, array_values(self::MEDIA_HANDLERS)))
 		{
-			$extension = $this->get_extension();
-			if ($extension === null) {
-				return null;
-			}
-
-			switch (strtolower($extension))
-			{
-				// Audio mime-types
-				case 'aac':
-				case 'adts':
-					$type = 'audio/acc';
-					break;
-
-				case 'aif':
-				case 'aifc':
-				case 'aiff':
-				case 'cdda':
-					$type = 'audio/aiff';
-					break;
-
-				case 'bwf':
-					$type = 'audio/wav';
-					break;
-
-				case 'kar':
-				case 'mid':
-				case 'midi':
-				case 'smf':
-					$type = 'audio/midi';
-					break;
-
-				case 'm4a':
-					$type = 'audio/x-m4a';
-					break;
-
-				case 'mp3':
-				case 'swa':
-					$type = 'audio/mp3';
-					break;
-
-				case 'wav':
-					$type = 'audio/wav';
-					break;
-
-				case 'wax':
-					$type = 'audio/x-ms-wax';
-					break;
-
-				case 'wma':
-					$type = 'audio/x-ms-wma';
-					break;
-
-				// Video mime-types
-				case '3gp':
-				case '3gpp':
-					$type = 'video/3gpp';
-					break;
-
-				case '3g2':
-				case '3gp2':
-					$type = 'video/3gpp2';
-					break;
-
-				case 'asf':
-					$type = 'video/x-ms-asf';
-					break;
-
-				case 'flv':
-					$type = 'video/x-flv';
-					break;
-
-				case 'm1a':
-				case 'm1s':
-				case 'm1v':
-				case 'm15':
-				case 'm75':
-				case 'mp2':
-				case 'mpa':
-				case 'mpeg':
-				case 'mpg':
-				case 'mpm':
-				case 'mpv':
-					$type = 'video/mpeg';
-					break;
-
-				case 'm4v':
-					$type = 'video/x-m4v';
-					break;
-
-				case 'mov':
-				case 'qt':
-					$type = 'video/quicktime';
-					break;
-
-				case 'mp4':
-				case 'mpg4':
-					$type = 'video/mp4';
-					break;
-
-				case 'sdv':
-					$type = 'video/sd-video';
-					break;
-
-				case 'wm':
-					$type = 'video/x-ms-wm';
-					break;
-
-				case 'wmv':
-					$type = 'video/x-ms-wmv';
-					break;
-
-				case 'wvx':
-					$type = 'video/x-ms-wvx';
-					break;
-
-				// Flash mime-types
-				case 'spl':
-					$type = 'application/futuresplash';
-					break;
-
-				case 'swf':
-					$type = 'application/x-shockwave-flash';
-					break;
-			}
+			$type = $this->get_type_from_extension($this->get_extension());
 		}
 
 		if ($find_handler)
 		{
-			if (in_array($type, $types_flash))
-			{
-				return 'flash';
-			}
-			elseif (in_array($type, $types_fmedia))
-			{
-				return 'fmedia';
-			}
-			elseif (in_array($type, $types_quicktime))
-			{
-				return 'quicktime';
-			}
-			elseif (in_array($type, $types_wmedia))
-			{
-				return 'wmedia';
-			}
-			elseif (in_array($type, $types_mp3))
-			{
-				return 'mp3';
-			}
+			return $this->get_handler_from_type($type);
+		}
 
+		return $type;
+	}
+
+	/**
+	 * @param string|null $extension
+	 * @return string|null
+	 */
+	public function get_type_from_extension($extension)
+	{
+		if ($extension === null) {
 			return null;
+		}
+
+		$extension = strtolower($extension);
+		foreach (self::EXTENSIONS_TYPES as $type => $extensions) {
+			if (in_array($extension, $extensions)) {
+				return $type;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param string $type
+	 * @return string|null
+	 */
+	public function get_handler_from_type($type)
+	{
+		foreach (self::MEDIA_HANDLERS as $handler => $types) {
+			if (in_array($type, $types)) {
+				return $handler;
+			}
+		}
+
+		return null;
+	}
+
 		}
 
 		return $type;
