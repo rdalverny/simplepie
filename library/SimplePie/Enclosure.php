@@ -1052,6 +1052,20 @@ class SimplePie_Enclosure
 	public function embed($options = '', $native = false)
 	{
 		$options = $this->process_embed_options($options);
+
+		if ($options['handler'] == 'html' &&
+			in_array($options['mime'], ['audio', 'video', 'image']))
+		{
+			return call_user_func_array(
+				[ $this, "embed_html_{$options['mime']}" ],
+				[
+					$this->get_link(),
+					$this->get_title(),
+					$options
+				]
+			);
+		}
+
 		extract($options);
 
 		$embed = '';
@@ -1071,7 +1085,7 @@ class SimplePie_Enclosure
 
 		// Flash Media Player file types.
 		// Preferred handler for MP3 file types.
-		elseif ($handler === 'fmedia' || ($handler === 'mp3' && $mediaplayer !== ''))
+		elseif ($handler === 'fmedia')
 		{
 			$height += 20;
 			if ($native)
@@ -1086,7 +1100,7 @@ class SimplePie_Enclosure
 
 		// QuickTime 7 file types.  Need to test with QuickTime 6.
 		// Only handle MP3's if the Flash Media Player is not present.
-		elseif ($handler === 'quicktime' || ($handler === 'mp3' && $mediaplayer === ''))
+		elseif ($handler === 'quicktime')
 		{
 			$height += 16;
 			if ($native)
@@ -1135,15 +1149,11 @@ class SimplePie_Enclosure
 	// QuickTime
 	const TYPES_QUICKTIME = array(
 		'audio/3gpp', 'audio/3gpp2',
-		'audio/aac', 'audio/x-aac',
 		'audio/aiff', 'audio/x-aiff',
 		'audio/mid', 'audio/midi', 'audio/x-midi',
-		'audio/mp4', 'audio/m4a',
 		'audio/m4a', 'audio/x-m4a',
-		'audio/wav', 'audio/x-wav',
 		'video/3gpp', 'video/3gpp2',
 		'video/m4v', 'video/x-m4v',
-		'video/mp4', 'video/mpeg', 'video/x-mpeg',
 		'video/quicktime',
 		'video/sd-video',
 	);
@@ -1161,19 +1171,32 @@ class SimplePie_Enclosure
 		'video/x-ms-wvx',
 	);
 
-	// MP3
-	const TYPES_MP3 = array(
-		'audio/mp3', 'audio/x-mp3',
-		'audio/mpeg', 'audio/x-mpeg'
+	// HTML5-handled mime types
+	const TYPES_HTML = array(
+		'image/*',
+		'audio/aac', 'audio/x-aac',
+		'audio/ogg',
+		'audio/wav',
+		'audio/x-wav',
+		'audio/mp3',
+		'audio/x-mp3',
+		'audio/mpeg',
+		'audio/x-mpeg',
+		'audio/mp4',
+		'video/ogg',
+		'video/webm',
+		'video/mp4',
+		'video/mpeg',
+		'video/x-mpeg',
 	);
 
 	//
 	const MEDIA_HANDLERS = array(
+		'html'      => self::TYPES_HTML,
 		'flash'     => self::TYPES_FLASH,
 		'fmedia'    => self::TYPES_FMEDIA,
 		'quicktime' => self::TYPES_QUICKTIME,
 		'wmedia'    => self::TYPES_WMEDIA,
-		'mp3'       => self::TYPES_MP3,
 	);
 
 	//
@@ -1186,11 +1209,14 @@ class SimplePie_Enclosure
 		'audio/mp3'       => array('mp3', 'swa'),
 		'audio/ms-wax'    => array('wax'),
 		'audio/ms-wma'    => array('wma'),
+		'audio/ogg'       => array('.oga', '.opus'),
 		'audio/wav'       => array('bwf', 'wav'),
 		'audio/x-m4a'     => array('m4a'),
+		'image/*'         => array('jpg', 'jpeg', 'gif', 'bmp', 'png', 'webp'),
 		'video/3gpp'      => array('3gp', '3gpp'),
 		'video/3gpp2'     => array('3g2', '3gp2'),
 		'video/mp4'       => array('mp4', 'mpg4'),
+		'video/ogg'       => array('.ogg', '.ogv'),
 		'video/quicktime' => array('mov', 'qt'),
 		'video/sd-video'  => array('sdv'),
 		'video/x-flv'     => array('flv'),
@@ -1199,9 +1225,10 @@ class SimplePie_Enclosure
 		'video/x-ms-wm'   => array('wm'),
 		'video/x-ms-wmv'  => array('wmv'),
 		'video/x-ms-wvx'  => array('wvx'),
-		'videop/mpeg'     => array('m1s', 'm1v', 'm15', 'm75',
+		'video/mpeg'      => array('m1s', 'm1v', 'm15', 'm75',
 								   'mp2', 'mpa', 'mpeg', 'mpg',
 								   'mpm', 'mpv'),
+		'video/webm'      => array('.webm'),
 	);
 
 	/**
@@ -1272,8 +1299,87 @@ class SimplePie_Enclosure
 		return null;
 	}
 
+	/**
+	 * Embed audio with native HTML5 <audio> element
+	 *
+	 * @param string $link url to media
+	 * @param string $title
+	 * @param array $options
+	 * @return string
+	 */
+	public function embed_html_audio($link, $title, $options)
+	{
+		if (empty($title)) {
+			$title = end(explode('/', $link));
 		}
 
-		return $type;
+		return <<<HTML
+<figure>
+	<audio controls
+		   preload="none"
+		   loop="{$options['loop']}"
+		   title="{$title}">
+		<source type="{$options['type']}" src="{$link}" />
+		<p>Your browser does not support HTML5 audio. Here is a <a href="{$link}">link to the audio</a> instead.</p>
+	</audio>
+	<figcaption><a href="{$link}">{$title}</a></figcaption>
+</figure>
+HTML;
+	}
+
+	/**
+	 * @param string $link url to video
+	 * @param string $title
+	 * @param array $options
+	 * @return string
+	 */
+	public function embed_html_video($link, $title, $options)
+	{
+		if (empty($title)) {
+			$title = end(explode('/', $link));
+		}
+
+		return <<<HTML
+<figure>
+	<video controls
+	       preload="none"
+		   poster="{$options['video']}"
+		   loop="{$options['loop']}"
+		   title="{$title}"
+		   aria-label="{$title}"
+		   style="width: 100%; height: auto;">
+		<source type="{$options['type']}" src="{$link}" />
+		<a href="{$link}"><img src="{$options['video']}"
+						       style="width: 100%; height: auto;"
+						       alt="Your browser does not support HTML5 video. Click here to get directly to the video instead." /></a>
+	</video>
+	<figcaption><a href="{$link}">{$title}</a></figcaption>
+</figure>
+HTML;
+	}
+
+	/**
+	 * @param string $link url to image
+	 * @param string $title
+	 * @param array $options
+	 * @return string
+	 */
+	public function embed_html_image($link, $title, $options)
+	{
+		if (empty($title)) {
+			$title = end(explode('/', $link));
+		}
+
+		return <<<HTML
+<figure>
+	<picture>
+		<img src="{$link}"
+			 alt="{$options['description']}"
+			 title="{$title}"
+			 style="width: 100%; height: auto;" />
+	</picture>
+	<figcaption><a href="{$link}">{$title}</a></figcaption>
+</figure>
+HTML;
 	}
 }
