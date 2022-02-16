@@ -1161,14 +1161,14 @@ class SimplePie_Enclosure
 		'audio/mp3'       => array('mp3', 'swa'),
 		'audio/ms-wax'    => array('wax'),
 		'audio/ms-wma'    => array('wma'),
-		'audio/ogg'       => array('.oga', '.opus'),
+		'audio/ogg'       => array('oga', 'opus'),
 		'audio/wav'       => array('bwf', 'wav'),
 		'audio/x-m4a'     => array('m4a'),
 		'image/*'         => array('jpg', 'jpeg', 'gif', 'bmp', 'png', 'webp'),
 		'video/3gpp'      => array('3gp', '3gpp'),
 		'video/3gpp2'     => array('3g2', '3gp2'),
 		'video/mp4'       => array('mp4', 'mpg4'),
-		'video/ogg'       => array('.ogg', '.ogv'),
+		'video/ogg'       => array('ogg', 'ogv'),
 		'video/quicktime' => array('mov', 'qt'),
 		'video/sd-video'  => array('sdv'),
 		'video/x-m4v'     => array('m4v'),
@@ -1179,7 +1179,7 @@ class SimplePie_Enclosure
 		'video/mpeg'      => array('m1s', 'm1v', 'm15', 'm75',
 								   'mp2', 'mpa', 'mpeg', 'mpg',
 								   'mpm', 'mpv'),
-		'video/webm'      => array('.webm'),
+		'video/webm'      => array('webm'),
 	);
 
 	/**
