@@ -894,7 +894,7 @@ class SimplePie_Enclosure
 	{
 		$defaults = [
 			'audio'    => '',
-			'video'    => '',
+			'video'    => $this->get_thumbnail(),
 			'alt'      => '',
 			'altclass' => '',
 			'loop'     => 'false',
@@ -1261,7 +1261,8 @@ class SimplePie_Enclosure
 	public function embed_html_audio($link, $title, $options)
 	{
 		if (empty($title)) {
-			$title = end(explode('/', $link));
+			$title = explode('/', $link);
+			$title = end($title);
 		}
 
 		return <<<HTML
@@ -1287,7 +1288,8 @@ HTML;
 	public function embed_html_video($link, $title, $options)
 	{
 		if (empty($title)) {
-			$title = end(explode('/', $link));
+			$title = explode('/', $link);
+			$title = end($title);
 		}
 
 		return <<<HTML
@@ -1318,14 +1320,15 @@ HTML;
 	public function embed_html_image($link, $title, $options)
 	{
 		if (empty($title)) {
-			$title = end(explode('/', $link));
+			$title = explode('/', $link);
+			$title = end($title);
 		}
 
 		return <<<HTML
 <figure>
 	<picture>
 		<img src="{$link}"
-			 alt="{$options['description']}"
+			 alt=""
 			 title="{$title}"
 			 style="width: 100%; height: auto;" />
 	</picture>
